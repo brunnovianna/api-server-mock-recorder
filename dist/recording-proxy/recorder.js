@@ -33,9 +33,11 @@ const CONFIG_OUTPUT_DIR = config.outputDir ||
     config_1.config.output ||
     FALLBACK_OUTPUT_DIR;
 const SAME_AS_PREVIOUS_RESPONSE = 'Same as previous';
-const SENSITIVE_KEYS = config.sanitize ?? [];
+const SENSITIVE_KEYS = config.obfuscate ?? [];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const LONG_HEX_RE = /^[0-9a-f]{16,}$/i;
+const GLOBAL_ASMR = [];
+globalThis.ASMR = GLOBAL_ASMR;
 function splitPath(path) {
     return path.split('.').filter(Boolean);
 }
@@ -72,23 +74,6 @@ const tryParseBuffer = (rawBody) => {
         return asText;
     }
 };
-// const sanitizeObject = (value: unknown): unknown => {
-//   if (Array.isArray(value)) {
-//     return value.map(sanitizeObject);
-//   }
-//   if (value && typeof value === 'object') {
-//     return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [key, entry]) => {
-//       const normalized = key.toLowerCase().replace(/[-_]/g, '');
-//       if (SENSITIVE_KEYS.has(normalized)) {
-//         acc[key] = '***';
-//         return acc;
-//       }
-//       acc[key] = sanitizeObject(entry);
-//       return acc;
-//     }, {});
-//   }
-//   return value;
-// };
 const normalizePathSegment = (segment) => {
     if (!segment) {
         return segment;
@@ -137,7 +122,7 @@ const isSameResponse = (current, previous) => {
 const resolveOutputDir = (outputDirFromCli) => outputDirFromCli || CONFIG_OUTPUT_DIR;
 exports.resolveOutputDir = resolveOutputDir;
 const recordTraffic = async (input) => {
-    const outputDirFromCli = input.outputDir || input.outputRoot;
+    const outputDirFromCli = input.outputDir;
     const outputRoot = node_path_1.default.resolve(process.cwd(), (0, exports.resolveOutputDir)(outputDirFromCli));
     const filePath = buildOutputFilePath(outputRoot, input.proxyName, input.method, input.endpoint);
     const existingEntries = await readExistingEntries(filePath);
@@ -167,7 +152,6 @@ const recordTraffic = async (input) => {
         setByPath(entry, p, 'obfuscate');
     }
     const processedResponseData = entry.response.data;
-    // dedupe só em cima de response.data já processado
     if (config.deduplicate && isSameResponse(processedResponseData, previousResponse)) {
         return;
     }
@@ -176,5 +160,6 @@ const recordTraffic = async (input) => {
         : processedResponseData;
     existingEntries.push(entry);
     await (0, promises_1.writeFile)(filePath, JSON.stringify(existingEntries, null, 2));
+    globalThis.ASMR.push(entry);
 };
 exports.recordTraffic = recordTraffic;

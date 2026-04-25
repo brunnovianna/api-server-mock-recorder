@@ -8,5 +8,5 @@ exports.config = {
         show: [],
         hide: [],
     },
-    sanitize: [],
+    obfuscate: [],
 };

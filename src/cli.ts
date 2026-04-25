@@ -12,7 +12,7 @@ Comandos:
 
 proxy:
   api-server-mock-recorder proxy --proxy-name service-a --port 4030 --target-base-url https://api.exemplo.com [--output-dir captured-mocks]
-  api-server-mock-recorder proxy --proxy-name auth-service --port 4031 [--target-base-url https://auth.exemplo.com] [--output-dir captured-mocks]
+  api-server-mock-recorder proxy --proxy-name auth-service --port 4031 --target-base-url https://auth.exemplo.com [--output-dir captured-mocks]
 `);
 };
 
@@ -44,13 +44,19 @@ if (!command || command === '--help' || command === '-h') {
 }
 
 if (command === 'proxy') {
-  const proxyName = args['proxy-name'] || process.env.PROXY_NAME;
-  const port = Number(args.port || process.env.PROXY_PORT || '4030');
-  const outputDir = args['output-dir'] || process.env.CAPTURED_MOCKS_DIR;
-  const targetBaseUrl = args['target-base-url'] || process.env.TARGET_BASE_URL;
+  const proxyName = args['proxy-name'];
+  const port = Number(args.port || '4030');
+  const outputDir = args['output-dir'];
+  const targetBaseUrl = args['target-base-url'];
 
   if (!proxyName) {
     console.error('[api-server-mock-recorder] --proxy-name é obrigatório para o comando proxy.');
+    usage();
+    process.exit(1);
+  }
+
+  if (!targetBaseUrl) {
+    console.error('[api-server-mock-recorder] --target-base-url é obrigatório para o comando proxy.');
     usage();
     process.exit(1);
   }

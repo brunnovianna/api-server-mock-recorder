@@ -22,9 +22,10 @@
     }
   },
   "bin": {
-    "api-server-mock-recorder": "dist/cli.js"
+    "api-server-mock-recorder": "bin/api-server-mock-recorder"
   },
   "files": [
+    "bin",
     "dist"
   ],
   "keywords": [
@@ -43,7 +44,6 @@
     "pack:check": "npm pack --dry-run"
   },
   "dependencies": {
-    "@next/env": "^15.3.8",
     "express": "^4.21.2"
   },
   "devDependencies": {

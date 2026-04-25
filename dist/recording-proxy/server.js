@@ -5,9 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.startProxy = void 0;
 const express_1 = __importDefault(require("express"));
-const env_1 = require("@next/env");
 const recorder_1 = require("./recorder");
-const getTargetBaseUrl = () => process.env.TARGET_BASE_URL || '';
 const buildForwardHeaders = (request) => {
     const headers = new Headers();
     Object.entries(request.headers).forEach(([key, value]) => {
@@ -56,17 +54,16 @@ const parseResponseBody = async (response) => {
     return null;
 };
 const startProxy = (options) => {
-    (0, env_1.loadEnvConfig)(process.cwd());
     const proxy = options.proxyName?.trim();
     if (!proxy) {
         throw new Error('[recording-proxy] --proxy-name é obrigatório.');
     }
     const port = options.port;
-    const targetBaseUrl = options.targetBaseUrl || getTargetBaseUrl();
+    const targetBaseUrl = options.targetBaseUrl?.trim();
     const outputDir = options.outputDir;
     const resolvedOutputDir = (0, recorder_1.resolveOutputDir)(outputDir);
     if (!targetBaseUrl) {
-        throw new Error(`[recording-proxy] Target URL não configurada para "${proxy}". Use --target-base-url ou defina TARGET_BASE_URL.`);
+        throw new Error(`[recording-proxy] Target URL não configurada para "${proxy}". Use --target-base-url.`);
     }
     const app = (0, express_1.default)();
     app.disable('x-powered-by');
@@ -79,6 +76,13 @@ const startProxy = (options) => {
             targetBaseUrl,
             outputDir: resolvedOutputDir,
             port,
+        });
+    });
+    app.get('/__debug/asmr', (_req, res) => {
+        const entries = globalThis.ASMR ?? [];
+        res.json({
+            total: entries.length,
+            entries: entries.slice(-50),
         });
     });
     app.all('*', async (request, response) => {

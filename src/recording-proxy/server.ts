@@ -1,5 +1,4 @@
 import express, { Request } from 'express';
-import { loadEnvConfig } from '@next/env';
 import { Server } from 'node:http';
 
 import { recordTraffic, resolveOutputDir } from './recorder';
@@ -8,11 +7,9 @@ export type ProxyName = string;
 export type StartProxyOptions = {
   proxyName: ProxyName;
   port: number;
-  targetBaseUrl?: string;
+  targetBaseUrl: string;
   outputDir?: string;
 };
-
-const getTargetBaseUrl = (): string => process.env.TARGET_BASE_URL || '';
 
 const buildForwardHeaders = (request: Request): Headers => {
   const headers = new Headers();
@@ -75,22 +72,18 @@ const parseResponseBody = async (response: Response): Promise<unknown> => {
 };
 
 export const startProxy = (options: StartProxyOptions): Server => {
-  loadEnvConfig(process.cwd());
-
   const proxy = options.proxyName?.trim();
   if (!proxy) {
     throw new Error('[recording-proxy] --proxy-name é obrigatório.');
   }
 
   const port = options.port;
-  const targetBaseUrl = options.targetBaseUrl || getTargetBaseUrl();
+  const targetBaseUrl = options.targetBaseUrl?.trim();
   const outputDir = options.outputDir;
   const resolvedOutputDir = resolveOutputDir(outputDir);
 
   if (!targetBaseUrl) {
-    throw new Error(
-      `[recording-proxy] Target URL não configurada para "${proxy}". Use --target-base-url ou defina TARGET_BASE_URL.`,
-    );
+    throw new Error(`[recording-proxy] Target URL não configurada para "${proxy}". Use --target-base-url.`);
   }
 
   const app = express();
@@ -109,6 +102,15 @@ export const startProxy = (options: StartProxyOptions): Server => {
     });
   });
 
+  app.get('/__debug/asmr', (_req, res) => {
+    const entries = globalThis.ASMR ?? [];
+    res.json({
+      total: entries.length,
+      entries: entries.slice(-50),
+    });
+  });
+
+  
   app.all('*', async (request, response) => {
     try {
       const url = new URL(request.originalUrl, targetBaseUrl);

@@ -6,14 +6,6 @@ CLI to capture real HTTP traffic during development and save requests/responses 
 npm install -D api-server-mock-recorder
 ```
 
-## CLI usage
-
-Show help:
-
-```bash
-npx api-server-mock-recorder --help
-```
-
 Start the recording proxy (recommended):
 
 ```bash
@@ -25,16 +17,7 @@ api-server-mock-recorder proxy --proxy-name billing-api --port 4040 --target-bas
 - `--proxy-name` (required): proxy name (e.g. `service-a`, `auth-service`, `billing-api`)
 - `--port` (optional): local proxy port (default: `4030`)
 - `--output-dir` (optional): output directory (default: `recorded-mocks`)
-- `--target-base-url` (conditional): target API URL. If omitted, `TARGET_BASE_URL` is used.
-
-### Environment variables
-
-- `PROXY_NAME`: alternative to `--proxy-name`
-- `PROXY_PORT`: alternative to `--port`
-- `CAPTURED_MOCKS_DIR`: alternative to `--output-dir`
-- `TARGET_BASE_URL`: alternative to `--target-base-url`
-
-The package automatically loads `.env` using `@next/env`.
+- `--target-base-url` (required): target API URL
 
 ## Configuration (`asmr.config.js`)
 
@@ -58,6 +41,28 @@ module.exports = {
 - `deduplicate`: avoids saving entries when `response.data` is equal to the last concrete response
 - `obfuscate`: obfuscates configured paths with `***`
 - `fields.hide`: removes paths from the final capture
+
+## Saved data structure
+
+This is what you may expect to see 
+type RecordedRequest = {
+  params: Record<string, string>;
+  headers: Record<string, string>;
+  body: unknown;
+};
+
+type RecordedResponse = {
+  status: number;
+  data: unknown;
+}
+
+type RecordedEntry = {
+  capturedAt: string;
+  method: string;
+  endpoint: string;
+  request: RecordedRequest;
+  response: RecordedResponse;
+};
 
 ## Output structure
 

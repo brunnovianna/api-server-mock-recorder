@@ -14,8 +14,6 @@ type RecordTrafficInput = {
   status: number;
   requestHeaders: Record<string, string>;
   outputDir?: string;
-  // Backward compatibility with legacy option name.
-  outputRoot?: string;
 };
 
 type RecordedRequest = {
@@ -36,6 +34,11 @@ type RecordedEntry = {
   request: RecordedRequest;
   response: RecordedResponse;
 };
+
+declare global {
+  // Debug buffer available at runtime for captured entries.
+  var ASMR: RecordedEntry[];
+}
 
 const FALLBACK_OUTPUT_DIR = 'captured-mocks';
 let config: AsmrConfig;
@@ -59,7 +62,6 @@ try {
   config = defaultConfig;
 }
 
-
 const CONFIG_OUTPUT_DIR =
   config.outputDir ||
   config.output ||
@@ -72,6 +74,9 @@ const SENSITIVE_KEYS = config.obfuscate ?? [];
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const LONG_HEX_RE = /^[0-9a-f]{16,}$/i;
+
+const GLOBAL_ASMR: RecordedEntry[] = [];
+globalThis.ASMR = GLOBAL_ASMR;
 
 type PlainObject = Record<string, unknown>;
 function splitPath(path: string): string[] {
@@ -169,7 +174,7 @@ const isSameResponse = (current: unknown, previous: unknown): boolean => {
 export const resolveOutputDir = (outputDirFromCli?: string): string => outputDirFromCli || CONFIG_OUTPUT_DIR;
 
 export const recordTraffic = async (input: RecordTrafficInput) => {
-  const outputDirFromCli = input.outputDir || input.outputRoot;
+  const outputDirFromCli = input.outputDir;
   const outputRoot = path.resolve(process.cwd(), resolveOutputDir(outputDirFromCli));
   const filePath = buildOutputFilePath(outputRoot, input.proxyName, input.method, input.endpoint);
   const existingEntries = await readExistingEntries(filePath);
@@ -208,4 +213,6 @@ export const recordTraffic = async (input: RecordTrafficInput) => {
     : processedResponseData;
   existingEntries.push(entry);
   await writeFile(filePath, JSON.stringify(existingEntries, null, 2));
+
+  globalThis.ASMR.push(entry);
 };

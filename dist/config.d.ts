@@ -6,6 +6,6 @@ export type AsmrConfig = {
         show: string[];
         hide: string[];
     };
-    sanitize: string[];
+    obfuscate: string[];
 };
 export declare const config: AsmrConfig;

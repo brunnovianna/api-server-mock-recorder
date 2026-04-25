@@ -3,7 +3,7 @@ export type ProxyName = string;
 export type StartProxyOptions = {
     proxyName: ProxyName;
     port: number;
-    targetBaseUrl?: string;
+    targetBaseUrl: string;
     outputDir?: string;
 };
 export declare const startProxy: (options: StartProxyOptions) => Server;
